@@ -64,10 +64,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\EndlessTerrain.cs" />
+    <Compile Include="Assets\Scripts\LODMesh.cs" />
     <Compile Include="Assets\Scripts\MapDisplay.cs" />
     <Compile Include="Assets\Scripts\MapGenerator.cs" />
     <Compile Include="Assets\Scripts\MeshGenerator.cs" />
     <Compile Include="Assets\Scripts\PerlinNoise.cs" />
+    <Compile Include="Assets\Scripts\TerrainChunk.cs" />
     <Compile Include="Assets\Scripts\TextureGenerator.cs" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>F:/Unity Projects/Learning Project/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>

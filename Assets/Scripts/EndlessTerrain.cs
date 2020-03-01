@@ -1,15 +1,18 @@
-﻿using System.Collections;
+﻿using Assets.Scripts;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class EndlessTerrain : MonoBehaviour
 {
-   public const float maxViewDistance = 450;
+   public LODInfo[] detailLevels;
+   public static float maxViewDistance;
+
    public Transform viewer;
    public Material mapMaterial;
 
    public static Vector2 viewerPosition;
-   static MapGenerator mapGenerator;
+   public static MapGenerator mapGenerator;
    int chunkSize;
    int chunksVisibleInViewDistance;
 
@@ -19,6 +22,7 @@ public class EndlessTerrain : MonoBehaviour
    void Start()
    {
       mapGenerator = FindObjectOfType<MapGenerator>();
+      maxViewDistance = detailLevels[detailLevels.Length - 1].visibleDistanceThreshold;
       chunkSize = MapGenerator.mapChunkSize - 1;
       chunksVisibleInViewDistance = Mathf.RoundToInt(maxViewDistance / chunkSize);
    }
@@ -36,78 +40,29 @@ public class EndlessTerrain : MonoBehaviour
       }
       terrainChunksVisibleLatUpdate.Clear();
 
+      //Gets the central chunk
       int currentChunkCoordX = Mathf.RoundToInt(viewerPosition.x / chunkSize);
       int currentChunkCoordY = Mathf.RoundToInt(viewerPosition.y / chunkSize);
 
+      //Goes through all visible chunks in range
       for (int yOffset = -chunksVisibleInViewDistance; yOffset <= chunksVisibleInViewDistance; yOffset++) {
          for (int xOffset = -chunksVisibleInViewDistance; xOffset <= chunksVisibleInViewDistance; xOffset++) {
+
+            //Neighboring chunks:
             Vector2 viewedChunkCoord = new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset);
 
             if (terrainChunkDictionary.ContainsKey(viewedChunkCoord)) {
-               terrainChunkDictionary[viewedChunkCoord].UpdateTerrainChunk();
+               //Update visibility of chunk depending on distance of viewer from chunk nearest edge.
+               terrainChunkDictionary[viewedChunkCoord].UpdateTerrainChunk(viewerPosition, maxViewDistance);
+               //If chunk remained visible, add it to VisibleLastUpdate list.
                if (terrainChunkDictionary[viewedChunkCoord].IsVisible()) {
                   terrainChunksVisibleLatUpdate.Add(terrainChunkDictionary[viewedChunkCoord]);
                }
             } else {
-               terrainChunkDictionary.Add(viewedChunkCoord, new TerrainChunk(viewedChunkCoord, chunkSize, transform, mapMaterial));
+               //If invisible, keep it in the total chunk list.
+               terrainChunkDictionary.Add(viewedChunkCoord, new TerrainChunk(viewedChunkCoord, chunkSize, detailLevels, transform, mapMaterial));
             }
          }
-      }
-   }
-
-   public class TerrainChunk
-   {
-      GameObject meshObject;
-      Vector2 position;
-      Bounds bounds;
-
-      MapData mapData;
-
-      MeshRenderer meshRenderer;
-      MeshFilter meshFilter;
-
-      public TerrainChunk(Vector2 coord, int size, Transform parent, Material material)
-      {
-         position = coord * size;
-         bounds = new Bounds(position, Vector2.one * size);
-         Vector3 positionV3 = new Vector3(position.x, 0, position.y);
-
-         meshObject = new GameObject("Terrain Chunk");
-         meshRenderer = meshObject.AddComponent<MeshRenderer>();
-         meshFilter = meshObject.AddComponent<MeshFilter>();
-         meshRenderer.material = material;
-         meshObject.transform.position = positionV3;
-         meshObject.transform.parent = parent;
-         SetVisible(false);
-
-         mapGenerator.RequestMapData(OnMapDataReceived);
-      }
-
-      void OnMapDataReceived(MapData mapData)
-      {
-         mapGenerator.RequestMeshData(mapData, OnMeshDataReceived);
-      }
-
-      void OnMeshDataReceived(MeshData meshData)
-      {
-         meshFilter.mesh = meshData.CreateMesh();
-      }
-
-      public void UpdateTerrainChunk()
-      {
-         float viewerDistanceFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(viewerPosition));
-         bool visible = viewerDistanceFromNearestEdge <= maxViewDistance;
-         SetVisible(visible);
-      }
-
-      public void SetVisible(bool visible)
-      {
-         meshObject.SetActive(visible);
-      }
-
-      public bool IsVisible()
-      {
-         return meshObject.activeSelf;
       }
    }
 }
